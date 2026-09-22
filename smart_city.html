@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart City - نظام متابعة الشكاوى والتواصل مع العمال</title>
+<style>
+:root{
+  --primary:#2563eb;--primary-dark:#1d4ed8;--success:#10b981;--danger:#ef4444;
+  --warning:#f59e0b;--dark:#1f2937;--gray-600:#6b7280;--gray-400:#9ca3af;
+  --gray-200:#e5e7eb;--gray-100:#f3f4f6;--white:#fff;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.08);--shadow-md:0 4px 12px rgba(0,0,0,.1);
+  --shadow-lg:0 10px 25px rgba(0,0,0,.12);
+  --r:10px;--tr:all .25s ease;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--gray-100);color:var(--dark);line-height:1.6}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+
+/* ===== شريط علوي ===== */
+.topbar{background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;padding:.9rem 1.5rem;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;box-shadow:var(--shadow-md)}
+.topbar h1{font-size:1.2rem;display:flex;align-items:center;gap:.5rem}
+.topbar .tabs{display:flex;gap:.4rem;flex-wrap:wrap}
+.tab-btn{background:rgba(255,255,255,.15);border:none;color:#fff;padding:.5rem 1rem;border-radius:20px;font-size:.85rem;transition:var(--tr)}
+.tab-btn:hover{background:rgba(255,255,255,.3)}
+.tab-btn.active{background:#fff;color:var(--primary);font-weight:600}
+.tab-btn .badge{background:var(--danger);color:#fff;font-size:.7rem;border-radius:10px;padding:.05rem .4rem;margin-right:.3rem}
+
+/* ===== التبويبات ===== */
+.tab{display:none;padding:1.5rem;max-width:1100px;margin:0 auto;animation:fadeIn .3s}
+.tab.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.section-title{font-size:1.3rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:.5rem}
+.section-title::before{content:'';width:4px;height:22px;background:var(--primary);border-radius:2px}
+
+/* ===== الإحصائيات ===== */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1.5rem}
+.stat-card{background:#fff;border-radius:var(--r);padding:1.2rem;box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:.9rem;border-top:4px solid var(--primary)}
+.stat-card.s-new{border-top-color:var(--warning)}
+.stat-card.s-prog{border-top-color:var(--primary)}
+.stat-card.s-done{border-top-color:var(--success)}
+.stat-ico{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.stat-num{font-size:1.6rem;font-weight:700}
+.stat-lbl{font-size:.8rem;color:var(--gray-600)}
+
+/* ===== البطاقات ===== */
+.card{background:#fff;border-radius:var(--r);padding:1.2rem;box-shadow:var(--shadow-sm);margin-bottom:1rem;transition:var(--tr)}
+.card:hover{box-shadow:var(--shadow-md)}
+.complaint-card{border-right:4px solid var(--warning)}
+.complaint-card.prog{border-right-color:var(--primary)}
+.complaint-card.done{border-right-color:var(--success)}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.5rem;flex-wrap:wrap}
+.card-head h4{font-size:1.05rem}
+.card-desc{color:var(--gray-600);font-size:.92rem;margin-bottom:.8rem}
+.card-meta{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;font-size:.8rem;color:var(--gray-600)}
+.chip{background:var(--gray-100);padding:.2rem .7rem;border-radius:15px;font-weight:500}
+.chip.cat{background:#dbeafe;color:var(--primary)}
+.chip.urgent{background:#fee2e2;color:var(--danger)}
+.chip.normal{background:#fef3c7;color:#b45309}
+.chip.low{background:var(--gray-100);color:var(--gray-600)}
+
+/* ===== الحالات ===== */
+.status{padding:.25rem .8rem;border-radius:20px;font-size:.78rem;font-weight:600;white-space:nowrap}
+.status.new{background:#fef3c7;color:#b45309}
+.status.prog{background:#dbeafe;color:var(--primary)}
+.status.done{background:#d1fae5;color:var(--success)}
+
+/* ===== الأزرار ===== */
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.1rem;border:none;border-radius:8px;font-size:.85rem;font-weight:600;transition:var(--tr);background:var(--gray-200);color:var(--dark)}
+.btn:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.btn-p{background:var(--primary);color:#fff}
+.btn-s{background:var(--success);color:#fff}
+.btn-d{background:var(--danger);color:#fff}
+.btn-w{background:var(--warning);color:#fff}
+.btn-sm{padding:.35rem .8rem;font-size:.78rem}
+.btn-block{width:100%;justify-content:center;padding:.8rem;font-size:1rem}
+.card-actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.8rem}
+
+/* ===== النموذج ===== */
+.form-card{background:#fff;border-radius:var(--r);padding:1.5rem;box-shadow:var(--shadow-sm);max-width:650px}
+.form-group{margin-bottom:1rem}
+.form-group label{display:block;margin-bottom:.4rem;font-weight:600;font-size:.9rem}
+.form-control{width:100%;padding:.7rem .9rem;border:2px solid var(--gray-200);border-radius:8px;font-size:.95rem;transition:var(--tr)}
+.form-control:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+textarea.form-control{resize:vertical;min-height:90px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:600px){.form-row{grid-template-columns:1fr}}
+
+/* ===== العمال ===== */
+.workers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1rem}
+.worker-card{background:#fff;border-radius:var(--r);padding:1.3rem;text-align:center;box-shadow:var(--shadow-sm);transition:var(--tr);border:2px solid transparent}
+.worker-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:var(--primary)}
+.worker-avatar{width:70px;height:70px;border-radius:50%;margin:0 auto .7rem;display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:#fff;font-weight:700}
+.worker-card h4{margin-bottom:.15rem}
+.worker-spec{font-size:.8rem;color:var(--primary);font-weight:600;margin-bottom:.3rem}
+.worker-rate{color:var(--warning);font-size:.85rem;margin-bottom:.4rem}
+.worker-status{font-size:.75rem;padding:.15rem .6rem;border-radius:15px;display:inline-block;margin-bottom:.6rem}
+.worker-status.free{background:#d1fae5;color:var(--success)}
+.worker-status.busy{background:#fee2e2;color:var(--danger)}
+
+/* ===== الدردشة ===== */
+.chat-box{background:#fff;border-radius:var(--r);box-shadow:var(--shadow-sm);display:flex;flex-direction:column;height:420px;max-width:650px}
+.chat-head{padding:.9rem 1.2rem;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center;background:var(--gray-100);border-radius:var(--r) var(--r) 0 0}
+.chat-msgs{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.6rem}
+.msg{max-width:75%;padding:.6rem .9rem;border-radius:14px;font-size:.9rem;animation:fadeIn .2s}
+.msg.me{align-self:flex-start;background:var(--primary);color:#fff;border-bottom-right-radius:4px}
+.msg.other{align-self:flex-end;background:var(--gray-100);border-bottom-left-radius:4px}
+.msg .time{display:block;font-size:.68rem;opacity:.7;margin-top:.2rem}
+.chat-input{display:flex;gap:.5rem;padding:.8rem;border-top:1px solid var(--gray-200)}
+.chat-input input{flex:1;padding:.6rem .9rem;border:2px solid var(--gray-200);border-radius:20px}
+.chat-input input:focus{outline:none;border-color:var(--primary)}
+.chat-input button{width:44px;height:44px;border-radius:50%;border:none;background:var(--primary);color:#fff;font-size:1.1rem}
+
+/* ===== التقييم ===== */
+.stars{display:flex;gap:.3rem;font-size:1.6rem;direction:ltr;justify-content:center;margin:.8rem 0}
+.stars span{cursor:pointer;color:var(--gray-400);transition:var(--tr)}
+.stars span.on{color:var(--warning);transform:scale(1.1)}
+
+/* ===== مودال ===== */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:200;padding:1rem}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:var(--r);padding:1.5rem;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;animation:fadeIn .25s}
+.modal h3{margin-bottom:1rem}
+
+/* ===== فلاتر ===== */
+.filters{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.2rem}
+.filter-btn{padding:.45rem 1rem;border:2px solid var(--gray-200);background:#fff;border-radius:20px;font-size:.83rem;font-weight:600;transition:var(--tr)}
+.filter-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+.empty{text-align:center;color:var(--gray-600);padding:2.5rem;background:#fff;border-radius:var(--r);box-shadow:var(--shadow-sm)}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--dark);color:#fff;padding:.8rem 1.4rem;border-radius:8px;box-shadow:var(--shadow-lg);z-index:300;animation:fadeIn .3s;font-size:.9rem}
+select.form-control{cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- ===== الشريط العلوي ===== -->
+<div class="topbar">
+  <h1>🏙️ Smart City</h1>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="dashboard">📊 لوحة التحكم</button>
+    <button class="tab-btn" data-tab="complaints">📝 الشكاوى <span class="badge" id="newBadge">0</span></button>
+    <button class="tab-btn" data-tab="new">➕ شكوى جديدة</button>
+    <button class="tab-btn" data-tab="workers">👷 العمال</button>
+    <button class="tab-btn" data-tab="chat">💬 المحادثات</button>
+  </div>
+</div>
+
+<!-- ===== لوحة التحكم ===== -->
+<div class="tab active" id="tab-dashboard">
+  <h2 class="section-title">لوحة التحكم</h2>
+  <div class="stats">
+    <div class="stat-card"><div class="stat-ico" style="background:#dbeafe">📝</div><div><div class="stat-num" id="stTotal">0</div><div class="stat-lbl">إجمالي الشكاوى</div></div></div>
+    <div class="stat-card s-new"><div class="stat-ico" style="background:#fef3c7">⏳</div><div><div class="stat-num" id="stNew">0</div><div class="stat-lbl">شكاوى جديدة</div></div></div>
+    <div class="stat-card s-prog"><div class="stat-ico" style="background:#dbeafe">🔧</div><div><div class="stat-num" id="stProg">0</div><div class="stat-lbl">قيد المعالجة</div></div></div>
+    <div class="stat-card s-done"><div class="stat-ico" style="background:#d1fae5">✅</div><div><div class="stat-num" id="stDone">0</div><div class="stat-lbl">مكتملة</div></div></div>
+  </div>
+  <h3 style="margin-bottom:.8rem">📋 أحدث الشكاوى</h3>
+  <div id="recentList"></div>
+</div>
+
+<!-- ===== الشكاوى ===== -->
+<div class="tab" id="tab-complaints">
+  <h2 class="section-title">متابعة الشكاوى</h2>
+  <div class="filters" id="filters">
+    <button class="filter-btn active" data-f="all">الكل</button>
+    <button class="filter-btn" data-f="new">جديدة</button>
+    <button class="filter-btn" data-f="prog">قيد المعالجة</button>
+    <button class="filter-btn" data-f="done">مكتملة</button>
+  </div>
+  <div id="complaintsList"></div>
+</div>
+
+<!-- ===== شكوى جديدة ===== -->
+<div class="tab" id="tab-new">
+  <h2 class="section-title">تقديم شكوى جديدة</h2>
+  <div class="form-card">
+    <div class="form-group">
+      <label>الاسم الكامل</label>
+      <input class="form-control" id="cName" placeholder="مثال: أحمد محمد">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>رقم الهاتف</label>
+        <input class="form-control" id="cPhone" placeholder="01xxxxxxxxx" dir="ltr" style="text-align:right">
+      </div>
+      <div class="form-group">
+        <label>المنطقة / العنوان</label>
+        <input class="form-control" id="cArea" placeholder="مثال: حي النور - شارع 5">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>نوع المشكلة</label>
+        <select class="form-control" id="cCat">
+          <option>💡 كهرباء</option><option>🔧 سباكة</option><option>🪵 نجارة</option>
+          <option>🎨 دهانات</option><option>❄️ تكييف وتبريد</option><option>🧱 بناء وتشطيبات</option>
+          <option>🚪 ألوميتال</option><option>📡 إنترنت وشبكات</option><option>🗑️ نظافة</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>درجة الأولوية</label>
+        <select class="form-control" id="cUrgent">
+          <option value="urgent">🔴 عاجلة</option>
+          <option value="normal" selected>🟡 عادية</option>
+          <option value="low">🟢 منخفضة</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>وصف المشكلة</label>
+      <textarea class="form-control" id="cDesc" placeholder="اشرح المشكلة بالتفصيل..."></textarea>
+    </div>
+    <button class="btn btn-p btn-block" onclick="addComplaint()">📨 إرسال الشكوى</button>
+  </div>
+</div>
+
+<!-- ===== العمال ===== -->
+<div class="tab" id="tab-workers">
+  <h2 class="section-title">العمال المتاحون</h2>
+  <div class="filters" id="specFilters">
+    <button class="filter-btn active" data-s="all">الكل</button>
+    <button class="filter-btn" data-s="كهرباء">كهرباء</button>
+    <button class="filter-btn" data-s="سباكة">سباكة</button>
+    <button class="filter-btn" data-s="نجارة">نجارة</button>
+    <button class="filter-btn" data-s="دهانات">دهانات</button>
+    <button class="filter-btn" data-s="تكييف">تكييف</button>
+    <button class="filter-btn" data-s="بناء">بناء</button>
+  </div>
+  <div class="workers-grid" id="workersGrid"></div>
+</div>
+
+<!-- ===== المحادثات ===== -->
+<div class="tab" id="tab-chat">
+  <h2 class="section-title">المحادثات</h2>
+  <div style="display:grid;grid-template-columns:250px 1fr;gap:1rem;max-width:900px" id="chatLayout">
+    <div id="chatList"></div>
+    <div class="chat-box">
+      <div class="chat-head">
+        <strong id="chatWith">💬 اختر محادثة</strong>
+        <span class="chip" id="chatStatus"></span>
+      </div>
+      <div class="chat-msgs" id="chatMsgs">
+        <p style="text-align:center;color:var(--gray-400);margin:auto">اختر محادثة من القائمة لبدء التواصل 📱</p>
+      </div>
+      <div class="chat-input">
+        <input id="msgInput" placeholder="اكتب رسالتك..." onkeydown="if(event.key==='Enter')sendMsg()">
+        <button onclick="sendMsg()">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== مودال تعيين عامل ===== -->
+<div class="modal-bg" id="assignModal">
+  <div class="modal">
+    <h3>👷 تعيين عامل للشكوى</h3>
+    <div id="assignList"></div>
+    <div style="text-align:left;margin-top:1rem"><button class="btn" onclick="closeModal('assignModal')">إلغاء</button></div>
+  </div>
+</div>
+
+<!-- ===== مودال التقييم ===== -->
+<div class="modal-bg" id="rateModal">
+  <div class="modal" style="text-align:center">
+    <h3>⭐ تقييم العامل</h3>
+    <p id="rateWorkerName" style="color:var(--gray-600)"></p>
+    <div class="stars" id="stars">
+      <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+    </div>
+    <p id="rateText" style="font-size:.85rem;color:var(--gray-600);min-height:20px"></p>
+    <button class="btn btn-s btn-block" style="margin-top:.8rem" onclick="submitRating()">إرسال التقييم</button>
+  </div>
+</div>
+
+<script>
+/* ================= البيانات ================= */
+const avColors=['#2563eb','#10b981','#f59e0b','#8b5cf6','#ec4899','#14b8a6','#f97316','#6366f1'];
+const workers=[
+  {id:1,name:'محمود عبد الله',spec:'كهرباء',rate:4.8,jobs:124,free:true},
+  {id:2,name:'سيد حسن',spec:'سباكة',rate:4.6,jobs:98,free:true},
+  {id:3,name:'كريم فؤاد',spec:'نجارة',rate:4.9,jobs:150,free:false},
+  {id:4,name:'عماد الدين',spec:'دهانات',rate:4.5,jobs:76,free:true},
+  {id:5,name:'طارق السيد',spec:'تكييف',rate:4.7,jobs:110,free:true},
+  {id:6,name:'حسن مصطفى',spec:'بناء',rate:4.4,jobs:85,free:false},
+  {id:7,name:'إبراهيم علي',spec:'سباكة',rate:4.3,jobs:67,free:true},
+  {id:8,name:'مصطفى كامل',spec:'كهرباء',rate:4.7,jobs:91,free:true},
+];
+let complaints=JSON.parse(localStorage.getItem('sc_complaints')||'null')||[
+  {id:1,name:'أحمد محمد',phone:'01001234567',area:'حي النور',cat:'💡 كهرباء',urgent:'urgent',desc:'انقطاع الكهرباء في الشقة بالكامل منذ الصباح، وتم فحص العداد بدون مشكلة ظاهرة.',status:'new',worker:null,created:'2026-09-18',msgs:[],rated:null},
+  {id:2,name:'سارة أحمد',phone:'01112345678',area:'حي الزهور',cat:'🔧 سباكة',urgent:'normal',desc:'تسريب مياه من الحوض في المطبخ يحتاج إصلاح.',status:'prog',worker:{id:2,name:'سيد حسن',spec:'سباكة'},created:'2026-09-17',msgs:[{from:'other',text:'حاضر هبعتلك ميعاد المعاينة إن شاء الله بكرة',time:'10:30'}],rated:null},
+  {id:3,name:'خالد عمر',phone:'01223456789',area:'وسط البلد',cat:'🎨 دهانات',urgent:'low',desc:'دهان غرفة النوم بحجم متوسط.',status:'done',worker:{id:4,name:'عماد الدين',spec:'دهانات'},created:'2026-09-15',msgs:[],rated:5},
+];
+let activeChat=null, assignTarget=null, ratingVal=0, ratingTarget=null;
+
+/* ================= أدوات ================= */
+const $=id=>document.getElementById(id);
+function save(){localStorage.setItem('sc_complaints',JSON.stringify(complaints))}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2500)}
+function timeNow(){return new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'})}
+function today(){return new Date().toISOString().slice(0,10)}
+function urgChip(u){return u==='urgent'?'<span class="chip urgent">🔴 عاجلة</span>':u==='normal'?'<span class="chip normal">🟡 عادية</span>':'<span class="chip low">🟢 منخفضة</span>'}
+function statusChip(s){return s==='new'?'<span class="status new">⏳ جديدة</span>':s==='prog'?'<span class="status prog">🔧 قيد المعالجة</span>':'<span class="status done">✅ مكتملة</span>'}
+
+/* ================= التبويبات ================= */
+document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');$('tab-'+b.dataset.tab).classList.add('active');
+  renderAll();
+});
+
+/* ================= الإضافة ================= */
+function addComplaint(){
+  const name=$('cName').value.trim(),phone=$('cPhone').value.trim(),
+        area=$('cArea').value.trim(),desc=$('cDesc').value.trim();
+  if(!name||!phone||!area||!desc){toast('⚠️ يرجى ملء جميع الحقول');return}
+  complaints.unshift({id:Date.now(),name,phone,area,cat:$('cCat').value,urgent:$('cUrgent').value,desc,status:'new',worker:null,created:today(),msgs:[],rated:null});
+  save();['cName','cPhone','cArea','cDesc'].forEach(i=>$(i).value='');
+  toast('✅ تم إرسال الشكوى بنجاح!');
+  document.querySelector('[data-tab="complaints"]').click();
+}
+
+/* ================= بطاقة الشكوى ================= */
+function complaintCard(c){
+  const cls=c.status==='prog'?'prog':c.status==='done'?'done':'';
+  let actions='';
+  if(c.status==='new') actions+=`<button class="btn btn-p btn-sm" onclick="openAssign(${c.id})">👷 تعيين عامل</button>`;
+  if(c.status==='prog') actions+=`<button class="btn btn-s btn-sm" onclick="completeJob(${c.id})">✅ إتمام العمل</button>`;
+  if(c.status==='done'&&c.worker&&!c.rated) actions+=`<button class="btn btn-w btn-sm" onclick="openRate(${c.id})">⭐ تقييم العامل</button>`;
+  if(c.rated) actions+=`<span class="chip">⭐ التقييم: ${c.rated}/5</span>`;
+  return `<div class="card complaint-card ${cls}">
+    <div class="card-head">
+      <h4>${c.cat} — ${c.area}</h4>${statusChip(c.status)}
+    </div>
+    <p class="card-desc">${c.desc}</p>
+    <div class="card-meta">
+      <span class="chip cat">${c.cat}</span>${urgChip(c.urgent)}
+      <span>👤 ${c.name}</span><span>📞 ${c.phone}</span><span>📅 ${c.created}</span>
+      ${c.worker?`<span class="chip" style="background:#d1fae5;color:var(--success)">👷 ${c.worker.name}</span>`:''}
+    </div>
+    <div class="card-actions">
+      ${actions}
+      <button class="btn btn-sm" onclick="openChat(${c.id})">💬 مراسلة</button>
+      <button class="btn btn-d btn-sm" onclick="delComplaint(${c.id})">🗑️ حذف</button>
+    </div>
+  </div>`;
+}
+
+/* ================= العرض ================= */
+let curFilter='all';
+function renderComplaints(){
+  const list=curFilter==='all'?complaints:complaints.filter(c=>c.status===curFilter);
+  $('complaintsList').innerHTML=list.length?list.map(complaintCard).join('')
+    :'<div class="empty">📭 لا توجد شكاوى هنا</div>';
+  const recent=complaints.slice(0,3);
+  $('recentList').innerHTML=recent.length?recent.map(complaintCard).join('')
+    :'<div class="empty">📭 لا توجد شكاوى بعد — قدّم أول شكوى من تبويب "شكوى جديدة"</div>';
+}
+function renderStats(){
+  $('stTotal').textContent=complaints.length;
+  $('stNew').textContent=complaints.filter(c=>c.status==='new').length;
+  $('stProg').textContent=complaints.filter(c=>c.status==='prog').length;
+  $('stDone').textContent=complaints.filter(c=>c.status==='done').length;
+  $('newBadge').textContent=complaints.filter(c=>c.status==='new').length;
+}
+let curSpec='all';
+function renderWorkers(){
+  const list=curSpec==='all'?workers:workers.filter(w=>w.spec.includes(curSpec));
+  $('workersGrid').innerHTML=list.map((w,i)=>`
+    <div class="worker-card">
+      <div class="worker-avatar" style="background:${avColors[w.id%avColors.length]}">${w.name.split(' ')[0][0]}</div>
+      <h4>${w.name}</h4>
+      <div class="worker-spec">🔧 ${w.spec}</div>
+      <div class="worker-rate">⭐ ${w.rate} <small style="color:var(--gray-400)">(${w.jobs} عملية)</small></div>
+      <span class="worker-status ${w.free?'free':'busy'}">${w.free?'🟢 متاح':'🔴 مشغول'}</span><br>
+      <button class="btn btn-p btn-sm" onclick="quickAssign(${w.id})" ${w.free?'':'disabled style="opacity:.5"'}>📋 تعيين لشكوى</button>
+    </div>`).join('');
+}
+function renderChatList(){
+  const withChat=complaints.filter(c=>c.msgs.length>0||c.worker);
+  $('chatList').innerHTML=withChat.length?withChat.map(c=>`
+    <div class="card" style="padding:.8rem;cursor:pointer;${activeChat===c.id?'border-right:4px solid var(--primary)':''}" onclick="openChat(${c.id})">
+      <strong style="font-size:.9rem">${c.worker?c.worker.name:'الدعم الفني'}</strong>
+      <div style="font-size:.78rem;color:var(--gray-600)">${c.cat} — ${c.area}</div>
+      <div style="font-size:.75rem;color:var(--gray-400)">${c.msgs.length?c.msgs[c.msgs.length-1].text.slice(0,30):'ابدأ المحادثة...'}</div>
+    </div>`).join('')
+    :'<div class="card" style="font-size:.85rem;color:var(--gray-600)">لا توجد محادثات بعد.<br>عيّن عاملاً على شكوى لبدء التواصل 💬</div>';
+}
+function renderChat(){
+  const box=$('chatMsgs');
+  if(!activeChat){box.innerHTML='<p style="text-align:center;color:var(--gray-400);margin:auto">اختر محادثة من القائمة لبدء التواصل 📱</p>';return}
+  const c=complaints.find(x=>x.id===activeChat);
+  $('chatWith').textContent='💬 '+(c.worker?c.worker.name+' — '+c.worker.spec:'الدعم الفني');
+  $('chatStatus').textContent=c.status==='new'?'⏳ بانتظار تعيين':c.status==='prog'?'🔧 يعمل الآن':'✅ مكتمل';
+  box.innerHTML=c.msgs.length?c.msgs.map(m=>`<div class="msg ${m.from==='me'?'me':'other'}">${m.text}<span class="time">${m.time}</span></div>`).join('')
+    :'<p style="text-align:center;color:var(--gray-400);margin:auto">ابدأ المحادثة مع العامل 👋</p>';
+  box.scrollTop=box.scrollHeight;
+}
+function renderAll(){renderStats();renderComplaints();renderWorkers();renderChatList();renderChat()}
+
+/* ================= التعيين ================= */
+function openAssign(cid){
+  assignTarget=cid;
+  $('assignList').innerHTML=workers.filter(w=>w.free).map(w=>`
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:.8rem;margin-bottom:.6rem">
+      <div><strong>${w.name}</strong> <span class="chip cat">${w.spec}</span><br>
+      <small style="color:var(--gray-600)">⭐ ${w.rate} — ${w.jobs} عملية</small></div>
+      <button class="btn btn-s btn-sm" onclick="doAssign(${w.id})">تعيين ✅</button>
+    </div>`).join('')||'<p style="color:var(--gray-600)">لا يوجد عمال متاحون حالياً</p>';
+  $('assignModal').classList.add('show');
+}
+function quickAssign(wid){
+  const freeComplaints=complaints.filter(c=>c.status==='new');
+  if(!freeComplaints.length){toast('⚠️ لا توجد شكاوى جديدة لتعيينها');return}
+  assignTarget=freeComplaints[0].id;
+  if(freeComplaints.length===1){doAssign(wid);return}
+  toast('📋 اختر الشكوى أولاً من قائمة التعيين');
+  openAssign(freeComplaints[0].id);
+  // إعادة عرض مع قائمة الشكاوى
+  $('assignList').innerHTML=freeComplaints.map(c=>`
+    <div class="card" style="padding:.8rem;margin-bottom:.6rem">
+      <strong>${c.cat} — ${c.area}</strong> ${urgChip(c.urgent)}
+      <p style="font-size:.83rem;color:var(--gray-600);margin:.3rem 0">${c.desc.slice(0,80)}...</p>
+      <button class="btn btn-p btn-sm" onclick="assignTarget=${c.id};doAssign(${wid})">تعيين ${workers.find(w=>w.id===wid).name} 👷</button>
+    </div>`).join('');
+}
+function doAssign(wid){
+  const c=complaints.find(x=>x.id===assignTarget);
+  const w=workers.find(x=>x.id===wid);
+  c.worker={id:w.id,name:w.name,spec:w.spec};
+  c.status='prog';
+  c.msgs.push({from:'other',text:`أهلاً ${c.name.split(' ')[0]}، أنا ${w.name} (${w.spec}). استلمت طلبك وهتواصل معاك لتأكيد المعاينة 🛠️`,time:timeNow()});
+  save();closeModal('assignModal');renderAll();
+  toast(`👷 تم تعيين ${w.name} بنجاح!`);
+}
+function completeJob(cid){
+  const c=complaints.find(x=>x.id===cid);
+  c.status='done';
+  if(c.worker){const w=workers.find(x=>x.id===c.worker.id);if(w){w.free=true;w.jobs++;}}
+  c.msgs.push({from:'other',text:'تم إتمام العمل بنجاح ✅ شكراً لثقتكم!',time:timeNow()});
+  save();renderAll();toast('✅ تم إتمام العمل!');
+}
+
+/* ================= الحذف ================= */
+function delComplaint(cid){
+  if(!confirm('هل أنت متأكد من حذف هذه الشكوى؟'))return;
+  complaints=complaints.filter(c=>c.id!==cid);
+  if(activeChat===cid)activeChat=null;
+  save();renderAll();toast('🗑️ تم حذف الشكوى');
+}
+
+/* ================= المحادثة ================= */
+function openChat(cid){activeChat=cid;document.querySelector('[data-tab="chat"]').click();renderChatList();renderChat()}
+function sendMsg(){
+  const t=$('msgInput').value.trim();
+  if(!t||!activeChat)return;
+  const c=complaints.find(x=>x.id===activeChat);
+  c.msgs.push({from:'me',text:t,time:timeNow()});
+  $('msgInput').value='';save();renderChat();renderChatList();
+  // رد تلقائي من العامل
+  if(c.worker){
+    setTimeout(()=>{
+      c.msgs.push({from:'other',text:'تم استلام رسالتك، هرد عليك في أقرب وقت ⏰',time:timeNow()});
+      save();renderChat();renderChatList();
+    },1200);
+  }
+}
+
+/* ================= التقييم ================= */
+const rateTexts=['','😞 سيئ','😐 مقبول','🙂 جيد','😊 جيد جداً','🤩 ممتاز!'];
+function openRate(cid){
+  ratingTarget=cid;ratingVal=0;
+  const c=complaints.find(x=>x.id===cid);
+  $('rateWorkerName').textContent=c.worker.name+' — '+c.cat;
+  document.querySelectorAll('#stars span').forEach(s=>s.classList.remove('on'));
+  $('rateText').textContent='';
+  $('rateModal').classList.add('show');
+}
+document.querySelectorAll('#stars span').forEach(s=>s.onclick=()=>{
+  ratingVal=+s.dataset.v;
+  document.querySelectorAll('#stars span').forEach(x=>x.classList.toggle('on',+x.dataset.v<=ratingVal));
+  $('rateText').textContent=rateTexts[ratingVal];
+});
+function submitRating(){
+  if(!ratingVal){toast('⭐ اختر عدد النجوم أولاً');return}
+  const c=complaints.find(x=>x.id===ratingTarget);
+  c.rated=ratingVal;
+  const w=workers.find(x=>x.id===c.worker.id);
+  if(w)w.rate=((w.rate*w.jobs+ratingVal)/(w.jobs+1)).toFixed(1);
+  save();closeModal('rateModal');renderAll();toast('⭐ شكراً لتقييمك!');
+}
+function closeModal(id){$(id).classList.remove('show')}
+document.querySelectorAll('.modal-bg').forEach(m=>m.onclick=e=>{if(e.target===m)m.classList.remove('show')});
+
+/* ================= الفلاتر ================= */
+document.querySelectorAll('#filters .filter-btn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#filters .filter-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');curFilter=b.dataset.f;renderComplaints();
+});
+document.querySelectorAll('#specFilters .filter-btn').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#specFilters .filter-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');curSpec=b.dataset.s;renderWorkers();
+});
+
+/* ================= تشغيل ================= */
+if(window.innerWidth<720){$('chatLayout').style.gridTemplateColumns='1fr'}
+renderAll();
+</script>
+</body>
+</html>
